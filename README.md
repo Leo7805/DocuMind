@@ -1,72 +1,78 @@
 # DocuMind
 
-DocuMind is an AI-powered document analysis backend system designed to extract, analyse, and structure information from PDF documents such as resumes.
+DocuMind is an AI-powered document analysis backend system that extracts, analyses, and structures information from PDF documents such as resumes.
 
 ## Overview
 
-This project focuses on integrating AI capabilities into real-world backend systems. It demonstrates how unstructured document data can be processed and transformed into structured, usable information through API-based workflows.
+This project demonstrates how AI can be integrated into real-world backend systems to process unstructured data and convert it into structured, actionable information.
 
-## Features
+It focuses on building API-driven workflows that combine document processing, AI inference, and structured data generation.
 
-- PDF text extraction using PdfPig
-- AI-powered analysis using OpenAI API
-- Structured resume parsing (skills, experience, education)
-- Automated summary and key insights generation
-- REST API built with ASP.NET Core (Minimal API)
-- Swagger/OpenAPI integration for testing and documentation
-- Service-layer architecture for scalability and maintainability
+## Key Features
+
+- Extract text from PDF documents using PdfPig
+- Process unstructured resume data into structured JSON
+- Generate AI-powered summaries and key insights using OpenAI API
+- Separate raw data (sourceSummary) from AI-generated output (summary)
+- Design structured data models for downstream applications
+- Provide REST APIs for integration with external systems
+
+## Architecture
+
+The system follows a service-based architecture:
+
+- **PdfService**: Handles PDF parsing and text extraction
+- **OpenAiService**: Manages AI integration and response handling
+- **PromptBuilder**: Controls AI output format and consistency
+- **API Layer**: Exposes endpoints for document analysis
+
+## API
+
+### POST /analyze
+
+Uploads a PDF resume and returns structured analysis.
+
+**Response Example:**
+
+    {
+      "summary": "...",
+      "sourceSummary": "...",
+      "keyInsights": ["..."],
+      "structuredResume": { ... }
+    }
 
 ## Tech Stack
 
 - .NET / C#
 - ASP.NET Core (Minimal API)
 - OpenAI API
-- PdfPig (PDF parsing)
+- PdfPig
 - Swagger / OpenAPI
 
-## API Endpoints
+## Why This Project
 
-### POST /analyze
+This project focuses on practical AI integration rather than model training.
 
-Upload a PDF resume and receive structured analysis.
+It demonstrates:
 
-**Input:**
-- multipart/form-data
-- file: PDF
-
-**Output:**
-```json
-{
-  "summary": "...",
-  "sourceSummary": "...",
-  "keyInsights": ["..."],
-  "structuredResume": { ... }
-}
-```
-
-## Project Goal
-
-This project is built to demonstrate:
-
-AI integration into backend systems
-API-driven architecture
-Document processing pipelines
-Real-world application of LLMs
-
+- Integrating LLMs into backend systems
+- Designing structured outputs from unstructured input
+- Building automation pipelines for document processing
+- Handling real-world API responses and errors
 
 ## Status
 
-### 🚧 In Progress
-Currently improving AI output stability and expanding structured data extraction.
+🚧 In Progress  
+Currently improving output stability, error handling, and structured data extraction.
 
-## Future Improvements
-HTML / PDF resume generation
-Frontend interface for editing structured data
-Advanced prompt tuning and response validation
-Deployment to Azure
+## Future Work
 
+- Resume tailoring based on job descriptions
+- HTML / PDF resume generation
+- Frontend interface for editing structured data
+- Advanced validation and fallback handling for AI responses
 
 ## Author
 
-Jin Liu (Leo)
+Jin Liu (Leo)  
 Backend & AI Integration Engineer
