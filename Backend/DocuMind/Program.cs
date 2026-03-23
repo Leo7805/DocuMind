@@ -24,6 +24,20 @@ builder.Services.AddScoped<IPdfService, PdfService>();
 builder.Services.AddHttpClient<IOpenAiService, OpenAiService>();
 builder.Services.AddScoped<IAiJsonParser, AiJsonParser>();
 
+// Config local CORS
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:3000")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        });
+});
+
 // builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 // builder.Services.AddOpenApi();
@@ -118,5 +132,7 @@ app.MapPost("/analyze", async (
     })
     .Accepts<IFormFile>("multipart/form-data") // Swagger: file upload endpoint
     .DisableAntiforgery(); // Disable CSRF validation for this endpoint
+
+app.UseCors(MyAllowSpecificOrigins);
 
 app.Run();
