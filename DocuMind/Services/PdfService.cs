@@ -3,18 +3,18 @@ using UglyToad.PdfPig;
 
 namespace DocuMind.Services;
 
-public class PdfService
+public sealed class PdfService : IPdfService
 {
-    public string ExtractText(IFormFile file)
+    public string ExtractText(Stream pdfStream)
     {
         try
         {
-            if (file == null || file.Length == 0)
+            if (pdfStream == null || pdfStream.Length == 0)
             {
                 throw new PdfExtractionException("Uploaded PDF is empty.");
             }
 
-            using var document = PdfDocument.Open(file.OpenReadStream());
+            using var document = PdfDocument.Open(pdfStream);
             var pages = document.GetPages();
             var text = string.Join("\n", pages.Select(p => p.Text));
 
@@ -25,7 +25,7 @@ public class PdfService
 
             return text;
         }
-        catch (PdfExtractionException e)
+        catch (PdfExtractionException)
         {
             throw;
         }

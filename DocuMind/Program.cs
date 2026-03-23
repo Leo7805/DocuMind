@@ -20,8 +20,9 @@ builder.Services.Configure<OpenAiOptions>(
     builder.Configuration.GetSection("OpenAi")
     );
 
-builder.Services.AddScoped<PdfService>();
-builder.Services.AddHttpClient<OpenAiService>();
+builder.Services.AddScoped<IPdfService, PdfService>();
+builder.Services.AddHttpClient<IOpenAiService, OpenAiService>();
+builder.Services.AddScoped<IAiJsonParser, AiJsonParser>();
 
 // builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -47,8 +48,8 @@ app.MapGet("/", ()=> Results.Ok("DocuMind is running..."));
 
 app.MapPost("/analyze", async (
         IFormFile file, 
-        PdfService pdfService,
-        OpenAiService openAiService,
+        IPdfService pdfService,
+        IOpenAiService openAiService,
         ILogger<Program> logger) =>
     {
         try
@@ -63,8 +64,8 @@ app.MapPost("/analyze", async (
                 return Results.BadRequest(new { error = "Only PDF files are supported." });
             }
 
-            // Extract text from PDF file
-            var extractedText = pdfService.ExtractText(file);
+            await using var pdfStream = file.OpenReadStream();
+            var extractedText = pdfService.ExtractText(pdfStream);
 
             var preview = extractedText.Length > 500
                 ? extractedText[..500]
