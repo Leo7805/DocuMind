@@ -1,24 +1,56 @@
-# Build outputs
+# -------------------------
+# .NET build outputs
+# -------------------------
 bin/
 obj/
 packages/
+*.pdb
+*.mdb
 
-# Rider / IntelliJ
+# -------------------------
+# Rider / JetBrains
+# -------------------------
 .idea/
 *.iml
 riderModule.iml
 /_ReSharper.Caches/
 
+# -------------------------
+# Node / Next.js
+# -------------------------
+node_modules/
+.next/
+dist/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# -------------------------
 # macOS
+# -------------------------
 .DS_Store
 
+# -------------------------
 # User-specific files
+# -------------------------
 *.user
 *.suo
 *.userprefs
 
+# -------------------------
 # Logs
+# -------------------------
 *.log
+logs/
 
+# -------------------------
 # ASP.NET Core generated files
+# -------------------------
 wwwroot/lib/
+
+# -------------------------
+# Env files
+# -------------------------
+.env
+.env.local
+.env.*.local
