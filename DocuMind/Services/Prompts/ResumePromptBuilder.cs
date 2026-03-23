@@ -43,7 +43,6 @@ public static class ResumePromptBuilder
                  Output JSON format:
                  {
                    "summary": "string",
-                   "sourceSummary": "string",
                    "keyInsights": ["string"],
                    "structuredResume": {
                      "basicInfo": {

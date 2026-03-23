@@ -86,6 +86,19 @@ app.MapPost("/analyze", async (
 
             return Results.Ok(response);
         }
+        catch (AiResponseParseException ex)
+        {
+            logger.LogError(ex, "Resume parsing failed during /analyze.");
+
+            return Results.Problem(
+                title: "Resume parsing failed",
+                detail: ex.Message,
+                statusCode: ex.StatusCode,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["fallbackSummary"] = ex.FallbackSummary
+                });
+        }
         catch (AppException ex)
         {
             logger.LogError(ex, "Application error during /analyze.");

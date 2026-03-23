@@ -1,11 +1,11 @@
 namespace DocuMind.Domain;
 
-public record StructuredResume
+public class StructuredResume
 {
-    public BasicInfo BasicInfo { get; init; } = new();
-    public IReadOnlyList<string> Skills { get; init; } = [];
-    public IReadOnlyList<ExperienceItem> Experience { get; init; } = [];
-    public IReadOnlyList<ProjectItem> Projects { get; init; } = [];
-    public IReadOnlyList<EducationItem> Education { get; init; } = [];
-    public IReadOnlyList<AdditionalSectionItem> AdditionalSections { get; init; } = [];
+    public BasicInfo BasicInfo { get; set; } = new();
+    public List<string> Skills { get; set; } = [];
+    public List<ExperienceItem> Experience { get; set; } = [];
+    public List<ProjectItem> Projects { get; set; } = [];
+    public List<EducationItem> Education { get; set; } = [];
+    public List<AdditionalSectionItem> AdditionalSections { get; set; } = [];
 }

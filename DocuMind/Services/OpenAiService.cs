@@ -1,7 +1,9 @@
 using System.Net.Http.Headers;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.Json;
 using DocuMind.Configuration;
+using DocuMind.Domain;
 using DocuMind.Dtos.Internal;
 using DocuMind.Exceptions;
 using DocuMind.Services.Prompts;
@@ -74,22 +76,13 @@ public sealed class OpenAiService(
     {
         using var document = JsonDocument.Parse(rawJson);
         var candidates = ExtractResponsePayloadCandidates(document.RootElement);
-
-        if (candidates.Count == 0)
-        {
-            logger.LogError(
-                "❌ No JSON candidates extracted from OpenAI response. Raw (truncated): {Raw}",
-                rawJson.Length > 500 ? rawJson[..500] + "..." : rawJson
-            );
-
-            throw new AiResponseParseException("No usable JSON found in OpenAI response.");
-        }
-
+        var parsed = new List<AiResumeAnalysisResult>();
         var errors = new List<string>();
-
-        for (var i = 0; i < candidates.Count; i++)
+        
+        for (var index = 0; index < candidates.Count; index++)
         {
-            var candidate = candidates[i];
+            var candidate = candidates[index];
+            var displayIndex = index + 1;
 
             try
             {
@@ -97,44 +90,214 @@ public sealed class OpenAiService(
 
                 if (!LooksLikeResume(aiResult))
                 {
-                    throw new AiResponseParseException("Parsed JSON is not a valid resume structure.");                
+                    errors.Add($"Candidate #{displayIndex}: JSON parsed but not a resume.");
+                    logger.LogDebug("Candidate #{I} parsed but not resume", displayIndex);
+                    continue;
                 }
 
-                logger.LogInformation(
-                    "✅ Candidate #{CandidateIndex} succeeded for type {Type}.",
-                    i + 1,
-                    nameof(AiResumeAnalysisResult)
-                );
-
-                return aiResult;
-            }
+                parsed.Add(aiResult);
+            }        
             catch (Exception ex)
             {
-                logger.LogWarning(
-                    "⚠️ Candidate #{CandidateIndex} failed: {Message}. Raw (truncated): {Raw}",
-                    i + 1,
-                    ex.Message,
-                    candidate.Length > 300 ? candidate[..300] + "..." : candidate
-                );
-
-                errors.Add($"Candidate #{i + 1}: {ex.Message}");
+                errors.Add($"Candidate #{displayIndex}: {ex.Message}");
             }
         }
+            
+        if (parsed.Count == 0)
+        {
+            logger.LogError(
+                "❌ All {Count} candidates failed to produce a resume. Errors: {Errors}. Raw (truncated): {Raw}",
+                candidates.Count,
+                string.Join(" | ", errors),
+                rawJson.Length > 500 ? rawJson[..500] + "..." : rawJson
+            );
+            
+            throw new AiResponseParseException(
+                "Failed to parse AI output into AiResumeAnalysisResult.",
+                ExtractFallbackSummary(rawJson)
+            );
+        }
+        
+        // Merge all valid candidates
+        var merged = MergeCandidates(parsed);
 
-        logger.LogError(
-            "❌ All {Count} candidates failed to parse {Type}. Errors: {Errors}. Raw (truncated): {Raw}",
-            candidates.Count,
-            nameof(AiResumeAnalysisResult),
-            string.Join(" | ", errors),
-            rawJson.Length > 500 ? rawJson[..500] + "..." : rawJson
+        logger.LogInformation(
+            "✅ Successfully merged {Count} resume candidates into final result.",
+            parsed.Count
         );
+        
+        return merged;
+    }
 
-        throw new AiResponseParseException("Failed to parse AI output into AiResumeAnalysisResult.");
+    private static string ExtractFallbackSummary(string rawJson)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(rawJson);
+            var root = doc.RootElement;
+
+            // 1. Try top-level output_text
+            var fromOutputText = TryExtractFromOutputText(root);
+            if (!string.IsNullOrWhiteSpace(fromOutputText))
+                return Truncate(fromOutputText);
+
+            // 2. Try output[].content[].text
+            var fromOutput = TryExtractFromOutput(root);
+            if (!string.IsNullOrWhiteSpace(fromOutput))
+                return Truncate(fromOutput);
+        }
+        catch
+        {
+            // ignore parsing errors
+        }
+
+        // 3. Fallback to raw JSON
+        return Truncate(rawJson);
+        
+        string Truncate(string text)
+        {
+            return text.Length > 500 ? text[..500] + "..." : text;
+        }
+    }
+
+private static AiResumeAnalysisResult MergeCandidates(List<AiResumeAnalysisResult> candidates)
+{
+    // Pick the candidate with the highest completeness score
+    var baseCandidate = candidates
+        .OrderByDescending(ScoreResumeCandidate)
+        .First();
+
+    foreach (var candidate in candidates)
+    {
+        if (candidate == baseCandidate) continue;
+
+        var baseSr = baseCandidate.StructuredResume;
+        var sr = candidate.StructuredResume;
+
+        // Merge BasicInfo fields only when missing in the base candidate
+        if (string.IsNullOrWhiteSpace(baseSr.BasicInfo.Name))
+            baseSr.BasicInfo.Name = sr.BasicInfo.Name;
+
+        if (string.IsNullOrWhiteSpace(baseSr.BasicInfo.Email))
+            baseSr.BasicInfo.Email = sr.BasicInfo.Email;
+
+        if (string.IsNullOrWhiteSpace(baseSr.BasicInfo.Phone))
+            baseSr.BasicInfo.Phone = sr.BasicInfo.Phone;
+
+        if (string.IsNullOrWhiteSpace(baseSr.BasicInfo.Address))
+            baseSr.BasicInfo.Address = sr.BasicInfo.Address;
+
+        if (string.IsNullOrWhiteSpace(baseSr.BasicInfo.ResumeTitle))
+            baseSr.BasicInfo.ResumeTitle = sr.BasicInfo.ResumeTitle;
+
+        if (string.IsNullOrWhiteSpace(baseSr.BasicInfo.Location))
+            baseSr.BasicInfo.Location = sr.BasicInfo.Location;
+
+        if (string.IsNullOrWhiteSpace(baseSr.BasicInfo.Linkedin))
+            baseSr.BasicInfo.Linkedin = sr.BasicInfo.Linkedin;
+
+        if (string.IsNullOrWhiteSpace(baseSr.BasicInfo.Website))
+            baseSr.BasicInfo.Website = sr.BasicInfo.Website;
+
+        if (string.IsNullOrWhiteSpace(baseSr.BasicInfo.Github))
+            baseSr.BasicInfo.Github = sr.BasicInfo.Github;
+
+        if (string.IsNullOrWhiteSpace(baseSr.BasicInfo.WorkRights))
+            baseSr.BasicInfo.WorkRights = sr.BasicInfo.WorkRights;
+
+        // Merge summary if the base candidate does not have one
+        if (string.IsNullOrWhiteSpace(baseCandidate.Summary))
+            baseCandidate.Summary = candidate.Summary;
+
+        // Merge KeyInsights without duplicates
+        baseCandidate.KeyInsights ??= [];
+        foreach (var insight in candidate.KeyInsights)
+        {
+            if (baseCandidate.KeyInsights != null && !baseCandidate.KeyInsights.Contains(insight))
+                baseCandidate.KeyInsights.Add(insight);
+        }
+
+        // Merge Skills without duplicates
+        baseSr.Skills ??= [];
+        foreach (var skill in sr.Skills.Where(skill => !baseSr.Skills.Contains(skill)))
+        {
+            baseSr.Skills.Add(skill);
+        }
+
+        // Merge Experience entries
+        baseSr.Experience ??= [];
+        baseSr.Experience.AddRange(sr.Experience);
+
+        // Merge Education entries
+        baseSr.Education ??= [];
+        baseSr.Education.AddRange(sr.Education);
+
+        // Merge Projects entries
+        baseSr.Projects ??= [];
+        baseSr.Projects.AddRange(sr.Projects);
+
+        // Merge AdditionalSections entries
+        baseSr.AdditionalSections ??= [];
+        baseSr.AdditionalSections.AddRange(sr.AdditionalSections);
+    }
+
+    return baseCandidate;
+}
+
+
+    private static int ScoreResumeCandidate(AiResumeAnalysisResult result)
+    {
+        var score = 0;
+        var sr = result.StructuredResume;
+
+        if (!string.IsNullOrWhiteSpace(result.Summary)) score++;
+        if (!string.IsNullOrWhiteSpace(sr.BasicInfo?.Name)) score++;
+        if (!string.IsNullOrWhiteSpace(sr.BasicInfo?.Email)) score++;
+        if (!string.IsNullOrWhiteSpace(sr.BasicInfo?.Phone)) score++;
+        if (!string.IsNullOrWhiteSpace(sr.BasicInfo?.Location)) score++;
+        if (!string.IsNullOrWhiteSpace(sr.BasicInfo?.Linkedin)) score++;
+        if (!string.IsNullOrWhiteSpace(sr.BasicInfo?.Website)) score++;
+        if (!string.IsNullOrWhiteSpace(sr.BasicInfo?.Github)) score++;
+        if (!string.IsNullOrWhiteSpace(sr.BasicInfo?.WorkRights)) score++;
+        if (sr.Skills?.Count > 0) score++;
+        if (sr.Experience?.Count > 0) score++;
+        if (sr.Education?.Count > 0) score++;
+        if (sr.Projects?.Count > 0) score++;
+        if (sr.AdditionalSections?.Count > 0) score++;
+
+        return score;
     }
 
     private static bool LooksLikeResume(AiResumeAnalysisResult aiResult)
     {
-        throw new NotImplementedException();
+        var sr = aiResult.StructuredResume;
+
+        if (sr is null)
+            return false;
+
+        // At least one keyword is non-empty
+        return
+            // Summary
+            !string.IsNullOrWhiteSpace(aiResult.Summary) ||
+
+            // BasicInfo
+            !string.IsNullOrWhiteSpace(sr.BasicInfo?.Name) ||
+            !string.IsNullOrWhiteSpace(sr.BasicInfo?.Email) ||
+            !string.IsNullOrWhiteSpace(sr.BasicInfo?.Phone) ||
+            !string.IsNullOrWhiteSpace(sr.BasicInfo?.Location) ||
+            !string.IsNullOrWhiteSpace(sr.BasicInfo?.Linkedin) ||
+            !string.IsNullOrWhiteSpace(sr.BasicInfo?.Website) ||
+            !string.IsNullOrWhiteSpace(sr.BasicInfo?.Github) ||
+
+            // Main resume sections
+            (sr.Skills?.Count > 0) ||
+            (sr.Experience?.Count > 0) ||
+            (sr.Education?.Count > 0) ||
+            (sr.Projects?.Count > 0) ||
+
+            // Additional sections
+            (sr.AdditionalSections?.Count > 0);
+
     }
 
     private async Task<string> SendResponsesRequestAsync(string prompt)
@@ -228,8 +391,15 @@ public sealed class OpenAiService(
                         continue;
                     }
                 }
+                
+                // ⭐⭐ NEW: extract content.text instead of passing the whole content object
+                if (!content.TryGetProperty("text", out var textElement) ||
+                    textElement.ValueKind != JsonValueKind.String)
+                {
+                    continue;
+                }
 
-                var part = ConvertElementToPayload(content);
+                var part = ConvertElementToPayload(textElement);
                 if (!string.IsNullOrWhiteSpace(part))
                 {
                     parts.Add(part);
