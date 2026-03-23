@@ -54,3 +54,5 @@ wwwroot/lib/
 .env
 .env.local
 .env.*.local
+
+UIExamples
