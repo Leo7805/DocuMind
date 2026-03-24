@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter'
 import { CssBaseline } from '@mui/material'
+import { appTheme } from './lib/conifg/appTheme'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -15,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body style={{ backgroundColor: appTheme.appBackground, fontFamily: appTheme.uiFontFamily }}>
         <AppRouterCacheProvider>
           <CssBaseline />
           {children}

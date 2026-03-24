@@ -1,15 +1,17 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { appTheme } from '@/app/lib/conifg/appTheme'
 import { HeaderBar } from './components/HeaderBar'
 import { EditPanel } from './components/EditPanel'
 import { PreviewPanel } from './components/PreviewPanel'
+import { FooterBar } from './components/FooterBar'
 
 export default function ResumePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [status, setStatus] = useState('')
-  const [result, setResult] = useState<any>(null)
+  const [result, setResult] = useState<unknown>(null)
 
   const handleUploadClick = () => {
     fileInputRef.current?.click()
@@ -44,37 +46,55 @@ export default function ResumePage() {
       const data = await response.json()
       setStatus('✅ Analysis complete!')
       setResult(data)
-    } catch (err) {
+    } catch {
       setStatus('❌ Error analyzing file.')
     }
   }
 
   return (
-    <div className="max-w-6xl mx-auto w-full h-screen flex flex-col">
-      <HeaderBar onUpload={handleUploadClick} />
+    <div className="min-h-screen">
+      <HeaderBar onUpload={handleUploadClick} downloadDisabled={!result} />
 
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/pdf"
-        className="hidden"
-        onChange={handleFileChange}
-      />
+      <div className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col px-3 pt-24 pb-8 lg:px-4">
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf"
+          className="hidden"
+          onChange={handleFileChange}
+        />
 
-      {/* Status message */}
-      {status && (
-        <div className="px-4 py-2 text-sm text-gray-700 bg-gray-100 border-b">{status}</div>
-      )}
+        {/* Status message */}
+        {status && (
+          <div className="border-b bg-gray-100 px-4 py-2 text-sm text-gray-700">{status}</div>
+        )}
 
-      {/* Main workspace */}
-      <div className="flex flex-1 overflow-hidden">
-        <div className="w-1/2 border-r overflow-auto">
-          <EditPanel />
+        {/* Main workspace */}
+        <div className="mt-6 grid min-h-0 flex-1 grid-cols-1 gap-8 lg:gap-16 lg:grid-cols-3">
+          <div
+            className="min-h-[320px] overflow-auto rounded-lg backdrop-blur-sm lg:col-span-1"
+            style={{
+              background: appTheme.appSurfaceBackground,
+              boxShadow: appTheme.appSurfaceShadow,
+            }}
+          >
+            <EditPanel />
+          </div>
+
+          <div
+            className="min-h-[320px] overflow-auto rounded-none backdrop-blur-sm lg:col-span-2"
+            style={{
+              background: appTheme.appSurfaceBackground,
+              boxShadow: '0 24px 60px rgba(15,23,42,0.1)',
+            }}
+          >
+            <PreviewPanel result={result} />
+          </div>
         </div>
 
-        <div className="w-1/2 overflow-auto">
-          <PreviewPanel result={result} />
+        <div className="pt-12">
+          <FooterBar />
         </div>
       </div>
     </div>

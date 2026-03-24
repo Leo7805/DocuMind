@@ -1,0 +1,12 @@
+export const resumeDocumentTheme = {
+  paperBackground: '#ffffff',
+  textColor: '#111827',
+  mutedTextColor: '#6b7280',
+  accentColor: '#2563eb',
+  fontFamily: '"Helvetica Neue", Arial, sans-serif',
+  lineHeight: 1.6,
+  previewShadow: '0 24px 60px rgba(15, 23, 42, 0.12)',
+  sectionTitleTextColor: '#ffffff',
+  skillTagTextColor: '#111827',
+  skillTagBackground: '#eff3ff',
+}
