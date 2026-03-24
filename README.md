@@ -51,6 +51,7 @@ The system focuses on building production-style workflows for real-world documen
 ### Frontend
 
 - Next.js (TypeScript)
+- Tailwind CSS
 - Material UI (MUI)
 - Handles file upload, API integration, and result visualisation
 
