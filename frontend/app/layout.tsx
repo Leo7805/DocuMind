@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter'
 import { CssBaseline } from '@mui/material'
-import { appTheme } from './lib/conifg/appTheme'
+import { appTheme } from './lib/config/appTheme'
 import './globals.css'
 
 export const metadata: Metadata = {

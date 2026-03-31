@@ -13,7 +13,21 @@ type ResumeTemplateConfig = {
     sectionSpacing: number
     contentGap: number
   }
-  sections: {
+  // Top-level document title styling (not a section).
+  resumeTitle: {
+    align: 'left' | 'center'
+    backgroundColor: string
+    shadow: string
+    textColor: string
+    fontFamily: string
+    fontSize: number
+    fontWeight: number
+    letterSpacing: number
+    paddingY: number
+    radius: number
+  }
+  // Basic info (header/contact) styling/layout.
+  basicInfo: {
     header: {
       height: number
       align: 'left' | 'center'
@@ -22,12 +36,16 @@ type ResumeTemplateConfig = {
       layout: 'inline' | 'two-column'
       gap: number
     }
-    sectionTitle: {
-      style: 'underline' | 'bar'
-      width: number
-      align: 'left' | 'center'
-      uppercase: boolean
-    }
+  }
+  // Shared style for most section headings (skills/experience/projects/education/etc).
+  sectionTitle: {
+    style: 'underline' | 'bar'
+    width: number
+    align: 'left' | 'center'
+    uppercase: boolean
+  }
+  // Skills-specific block styling.
+  skillsSection: {
     skillTags: {
       style: 'pill' | 'soft'
       radius: number
@@ -41,6 +59,10 @@ type ResolvedResumeTemplate = ResumeTemplateConfig & {
 }
 
 function createResumeTemplate(template: ResumeTemplateConfig): ResolvedResumeTemplate {
+  // Style precedence:
+  // 1. resumeDocumentTheme: shared visual defaults for all resume templates.
+  // 2. template.tokens: template-level visual overrides.
+  // 3. component/page styles: page-size and print behavior live outside theme tokens.
   return {
     ...template,
     tokens: {

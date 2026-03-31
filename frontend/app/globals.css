@@ -24,3 +24,72 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: #ffffff;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .resume-print-shell {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+
+  .resume-print-preview {
+    overflow: visible !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    min-height: 0 !important;
+  }
+
+  .resume-print-document {
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  .resume-print-pages {
+    display: block !important;
+  }
+
+  .resume-print-measure {
+    display: none !important;
+  }
+
+  .resume-print-scale-shell {
+    aspect-ratio: auto !important;
+    overflow: visible !important;
+  }
+
+  .resume-print-page {
+    width: 210mm !important;
+    max-width: none !important;
+    aspect-ratio: auto !important;
+    min-height: 297mm !important;
+    height: auto !important;
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    transform-origin: initial !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .resume-print-pages > .resume-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+}
